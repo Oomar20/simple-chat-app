@@ -1,11 +1,15 @@
-# Use an official Nginx image as the base image
+# Use the official Nginx image
 FROM nginx:latest
 
-# Copy the static files to the default Nginx HTML directory
+# Copy static website files to the default Nginx HTML directory
 COPY . /usr/share/nginx/html
 
-# Expose port 8080
+# Expose the port Nginx will use
 EXPOSE 8080
 
-# Start Nginx when the container launches
+# Add a health check to ensure the container is running properly
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD curl -f http://localhost:8080 || exit 1
+
+# Run Nginx in the foreground
 CMD ["nginx", "-g", "daemon off;"]

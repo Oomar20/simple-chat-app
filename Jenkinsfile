@@ -1,23 +1,33 @@
 pipeline {
-  agent any
-  stages {
-    stage('Build') {
-      steps {
-        echo 'Building the application...'
-        sh 'docker build -t hello-world-app .'
-      }
+    agent any
+
+    stages {
+        stage('Build Docker Image') {
+            steps {
+                // Build the Docker image
+                script {
+                    sh 'docker build -t app-name .'
+                }
+            }
+        }
+
+        stage('Run Docker Container') {
+            steps {
+                // Run the Docker container
+                script {
+                    sh 'docker run -d -p 8080:80 --name app-container app-name'
+                }
+            }
+        }
     }
-    stage('Test') {
-      steps {
-        echo 'Testing the application...'
-        sh 'npm test'  // assuming there's a simple test script that checks the homepage
-      }
+
+    post {
+        always {
+            // Cleanup after the pipeline
+            script {
+                sh 'docker stop app-container || true'
+                sh 'docker rm app-container || true'
+            }
+        }
     }
-    stage('Deploy') {
-      steps {
-        echo 'Deploying the application (locally)...'
-        sh 'docker run -d -p 8080:8080 hello-world-app'
-      }
-    }
-  }
 }
