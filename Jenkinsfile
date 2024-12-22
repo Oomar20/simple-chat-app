@@ -24,6 +24,7 @@ pipeline {
     post {
         always {
             // Cleanup after the pipeline
+            junit 'test-results/jest-junit.xml'
             script {
                 sh 'docker stop app-container || true'
                 sh 'docker rm app-container || true'
