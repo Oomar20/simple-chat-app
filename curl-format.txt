@@ -1,0 +1,5 @@
+HTTP Code: %{http_code}
+Time Total: %{time_total}s
+Time Connect: %{time_connect}s
+Time Start Transfer: %{time_starttransfer}s
+Size Download: %{size_download} bytes

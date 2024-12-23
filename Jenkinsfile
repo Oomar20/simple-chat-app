@@ -1,34 +1,47 @@
 pipeline {
-    agent any
-
-    stages {
-        stage('Build Docker Image') {
-            steps {
-                // Build the Docker image
-                script {
-                    sh 'docker build -t app-name .'
-                }
-            }
-        }
-
-        stage('Run Docker Container') {
-            steps {
-                // Run the Docker container
-                script {
-                    sh 'docker run -d -p 8080:80 --name app-container app-name'
-                }
-            }
-        }
+  agent any
+  stages {
+    stage('Build') {
+      steps {
+        sh 'docker build -t my-app:latest .'
+      }
     }
-
-    post {
-        always {
-            // Cleanup after the pipeline
-            junit 'test-results/jest-junit.xml'
-            script {
-                sh 'docker stop app-container || true'
-                sh 'docker rm app-container || true'
-            }
-        }
+    stage('Test') {
+      steps {
+        sh 'npm test'
+      }
     }
+    stage('Deploy') {
+      steps {
+        sh 'docker run -d -p 3000:3000 my-app:latest'
+      }
+    }
+    stage('Monitor Application') {
+      steps {
+        script {
+          def response = sh(returnStatus: true, script: "curl -o /dev/null -s -w '%{http_code}' http://localhost:3000")
+          if (response != 200) {
+            error "Application is down or unresponsive"
+          }
+        }
+      }
+    }
+    stage('Rollback') {
+      when {
+        expression { currentBuild.result == 'FAILURE' }
+      }
+      steps {
+        echo 'Rolling back to last stable version...'
+        sh 'docker run -d -p 3000:3000 my-app:stable'
+      }
+    }
+  }
+  post {
+    success {
+      echo 'Build and deployment successful!'
+    }
+    failure {
+      echo 'Build failed, initiating rollback...'
+    }
+  }
 }
